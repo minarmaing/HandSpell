@@ -10,7 +10,8 @@ COPY requirements-api.txt .
 RUN pip install --no-cache-dir -r requirements-api.txt
 
 COPY api/ ./api/
-COPY models/kazim_handspell_mnist_custom_cnn.keras ./models/kazimh_handspell_mnist_custom_cnn.keras
+
+COPY models/kazim_handspell_mnist_custom_cnn.keras ./models/kazim_handspell_mnist_custom_cnn.keras
 
 
 EXPOSE 8000

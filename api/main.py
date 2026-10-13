@@ -15,7 +15,7 @@ from .predict import predict_letter
 """
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "..", "models", "kazimh_handspell_mnist_custom_cnn.h5")
+MODEL_PATH = os.path.join(BASE_DIR, "..", "models", "kazim_handspell_mnist_custom_cnn.keras")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
