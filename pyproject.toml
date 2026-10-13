@@ -7,7 +7,17 @@ authors = [
     { name = "Afonso Silva"}
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi>=0.143.0",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "opencv-python-headless>=5.0.0.93",
+    "pandas>=3.0.6",
+    "python-multipart>=0.0.32",
+    "scikit-learn>=1.9.1",
+    "tensorflow>=2.21.0",
+    "uvicorn>=0.54.0",
+]
 
 [project.scripts]
 handspell = "handspell:main"
