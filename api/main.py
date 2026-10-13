@@ -1,51 +1,57 @@
+from fastapi import FastAPI, Request, UploadFile
+from starlette.concurrency import run_in_threadpool
+from contextlib import asynccontextmanager
+import tensorflow as tf
 import os
 
-from fastapi import FastAPI, UploadFile
-import tensorflow as tf
-import io
-from PIL import Image
-import numpy as np
-import cv2
-'''
-    HandSpell API main module
-'''
+from .preprocessing import preprocess_image
+from .predict import predict_letter
 
-app = FastAPI()
-# Base directory and model path configuration
+
+"""
+    HandSpell API main module
+    This module provides the main FastAPI application for the HandSpell API.
+    It includes the endpoint for predicting letters from uploaded images.
+"""
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "..", "models", "kazimh_handspell_mnist_custom_cnn.h5")
-print(f"🔄 Attempting to load model from: {os.path.abspath(MODEL_PATH)}")
-model = tf.keras.models.load_model(MODEL_PATH)
-print("✅ Model loaded successfully.")
 
-# Prediction endpoint for HandSpell API
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Runs before the API accepts requests
+    print(f"Loading model from: {MODEL_PATH}")
+
+    app.state.model = tf.keras.models.load_model(
+        MODEL_PATH,
+        compile=False
+    )
+
+    print("Model loaded successfully.")
+
+    yield  # The API serves requests during this period
+
+    # Runs when the API shuts down
+    del app.state.model
+    print("Model reference released.")
+
+app = FastAPI(lifespan=lifespan)
+
+# Runs entirely in the worker thread
+def preprocess_and_predict(contents: bytes, model) -> dict:
+    image_tensor = preprocess_image(contents)
+    return predict_letter(model, image_tensor)
+
+
 @app.post("/predict")
-async def predict(file: UploadFile):
-    # Read and preprocess the uploaded image
-    contents = await file.read()
-    # Open the image and convert it to grayscale
-    raw_image = Image.open(io.BytesIO(contents)).convert("L")
-    # Convert the image to a NumPy array
-    # Resize the image to 28x28 pixels
-    # Normalize the image to the range [0, 1]
-    # Reshape the image to match the model's input shape
-    img_np = np.array(raw_image)
-    img_resized = cv2.resize(img_np, (28, 28))
-    img_normalized = img_resized.astype(np.float32) / 255.0
-    img_final_tensor = np.reshape(img_normalized, (1, 28, 28, 1))
+async def predict(request: Request, file: UploadFile):
+    try:
+        contents = await file.read()
+    finally:
+        await file.close()
 
-    # Make predictions using the preprocessed image
-    predictions = model.predict(img_final_tensor, verbose=0)
-    # Extract the predicted class index and confidence score
-    scores = predictions[0]
-    # Get the index of the class with the highest score
-    predicted_idx = int(np.argmax(scores))
-    # Get the confidence score for the predicted class
-    confidence = float(scores[predicted_idx])
-    # Convert the predicted class index to the corresponding letter
-    letter = chr(predicted_idx + ord('A'))
-    # Return the prediction result as a JSON response
-    return {
-        "letter": letter,
-        "confidence": confidence
-    }
+    return await run_in_threadpool(
+        preprocess_and_predict,
+        contents,
+        request.app.state.model
+    )
