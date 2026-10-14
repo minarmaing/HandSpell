@@ -11,12 +11,21 @@ if uploaded_file is not None:
     st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
     st.write("")
     st.write("Classifying...")
+
     response = requests.post(
-        os.getenv("API_URL", "http://localhost:8001/predict"),
-        files={"file": uploaded_file},
-    )
+    os.getenv("API_URL", "http://localhost:8001/predict"),
+    files={
+        "file": (
+            uploaded_file.name,
+            uploaded_file.getvalue(),
+            uploaded_file.type
+        )
+    },
+    timeout=60
+)
     if response.status_code == 200:
-        response_json = response.json()
-        st.success(f"Predicted letter: {response_json['letter']}")
+        result = response.json()
+        st.success(f"Predicted letter: {result['letter']}")
+        st.write(f"Model score: {result['confidence']:.1%}")
     else:
         st.error(f"Error {response.status_code}: {response.text}")
