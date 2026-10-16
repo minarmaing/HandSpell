@@ -10,8 +10,13 @@ import numpy as np
 def predict_letter(model, image_tensor: np.ndarray) -> dict:
     predictions = model.predict(image_tensor, verbose=0)
 
+    # Extract the prediction scores for the first (and only) image in the batch
     scores = predictions[0]
+    # Determine the index of the class with the highest prediction score
+    # Extract the index of the class with the highest prediction score
     predicted_idx = int(np.argmax(scores))
+
+    # Convert the predicted class index to the corresponding letter
 
     return {
         "letter": chr(predicted_idx + ord("A")),
