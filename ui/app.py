@@ -4,7 +4,6 @@ import os
 
 st.set_page_config(page_title="HandSpell Tester UI", layout="centered")
 st.title("✋ HandSpell Basic Tester")
-st.write("Upload a 28x28 grayscale hand sign image to validate the Docker API.")
 
 uploaded_file = st.file_uploader("Choose an image...", type="png")
 if uploaded_file is not None:
@@ -25,7 +24,7 @@ if uploaded_file is not None:
 )
     if response.status_code == 200:
         result = response.json()
-        st.success(f"Predicted letter: {result['letter']}")
+        st.success(f"Predicted letter: {result['prediction']}")
         st.write(f"Model score: {result['confidence']:.1%}")
     else:
         st.error(f"Error {response.status_code}: {response.text}")
